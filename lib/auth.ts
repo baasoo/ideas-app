@@ -41,3 +41,6 @@ export function parseAuthCookie(cookieHeader: string | null): string | null {
   }
   return null;
 }
+
+// Export getServerSession for Auth.js integration
+export { getServerSession } from "next-auth";

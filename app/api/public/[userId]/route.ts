@@ -3,9 +3,10 @@ import { getDb } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await params;
     const db = getDb();
 
     const ideasResult = await db.query(
@@ -13,7 +14,7 @@ export async function GET(
        FROM ideas
        WHERE user_id = $1 AND is_public = true
        ORDER BY created_at DESC`,
-      [params.userId]
+      [userId]
     );
     const ideas = ideasResult.rows;
 

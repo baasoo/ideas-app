@@ -18,6 +18,7 @@ export default function DashboardClient() {
     description: "",
     category: "",
     tags: "",
+    is_public: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();

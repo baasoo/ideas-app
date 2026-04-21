@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import { getDb } from "@/lib/db";
-import { verifyToken, parseAuthCookie } from "@/lib/auth";
+import type { Session } from "next-auth";
 
 export async function GET(
   request: NextRequest,
@@ -19,13 +21,12 @@ export async function GET(
 
     // Check if private and user is not owner
     if (!idea.is_public) {
-      const token = parseAuthCookie(request.headers.get("cookie"));
-      if (!token) {
+      const session = (await getServerSession(authOptions)) as Session | null;
+      if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const payload = verifyToken(token);
-      if (!payload || payload.userId !== idea.user_id) {
+      if (session.user.id !== idea.user_id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
@@ -57,21 +58,16 @@ export async function PATCH(
     const { id } = await params;
     console.log("[PATCH /api/ideas/[id]] id:", id);
 
-    const token = parseAuthCookie(request.headers.get("cookie"));
+    const session = (await getServerSession(authOptions)) as Session | null;
 
-    if (!token) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const payload = verifyToken(token);
-    if (!payload) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    console.log("[PATCH /api/ideas/[id]] payload:", { userId: payload.userId, email: payload.email });
+    console.log("[PATCH /api/ideas/[id]] session:", { userId: session.user.id, email: session.user.email });
 
     const db = getDb();
-    console.log("[PATCH /api/ideas/[id]] Querying idea with id:", params.id);
+    console.log("[PATCH /api/ideas/[id]] Querying idea with id:", id);
 
     const ideaResult = await db.query(`SELECT user_id FROM ideas WHERE id = $1`, [
       id,
@@ -84,7 +80,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Idea not found" }, { status: 404 });
     }
 
-    if (ideaResult.rows[0].user_id !== payload.userId) {
+    if (ideaResult.rows[0].user_id !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -139,14 +135,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const token = parseAuthCookie(request.headers.get("cookie"));
+    const session = (await getServerSession(authOptions)) as Session | null;
 
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
-    if (!payload) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -159,7 +150,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Idea not found" }, { status: 404 });
     }
 
-    if (ideaResult.rows[0].user_id !== payload.userId) {
+    if (ideaResult.rows[0].user_id !== session.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

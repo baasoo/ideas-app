@@ -1,5 +1,6 @@
 "use client";
 
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,7 +16,7 @@ export default function Navbar({ user }: NavbarProps) {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut({ redirect: false });
       router.push("/");
     } catch (err) {
       console.error("Logout failed:", err);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 interface AuthFormProps {
@@ -21,22 +22,49 @@ export default function AuthForm({ isSignup = false }: AuthFormProps) {
     setLoading(true);
 
     try {
-      const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
+      if (isSignup) {
+        // For signup, use the signup endpoint to create the account
+        const signupResponse = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
 
-      const data = await response.json();
+        if (!signupResponse.ok) {
+          const data = await signupResponse.json();
+          setError(data.error || "Sign up failed");
+          setLoading(false);
+          return;
+        }
 
-      if (!response.ok) {
-        setError(data.error || "Authentication failed");
-        return;
+        // After signup, log in with Auth.js
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError(result.error || "Login failed after signup");
+          return;
+        }
+
+        router.push("/dashboard");
+      } else {
+        // For login, use Auth.js credentials provider
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError(result.error || "Invalid email or password");
+          return;
+        }
+
+        router.push("/dashboard");
       }
-
-      router.push("/dashboard");
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {

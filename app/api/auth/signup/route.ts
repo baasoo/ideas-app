@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { hashPassword, generateToken } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,27 +35,16 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
     const insertResult = await db.query(
-      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
+      "INSERT INTO users (email, password_hash, provider) VALUES ($1, $2, 'credentials') RETURNING id, email",
       [email, passwordHash]
     );
 
     const user = insertResult.rows[0];
-    const token = generateToken(user.id, user.email);
 
-    const response = NextResponse.json(
+    return NextResponse.json(
       { user: { id: user.id, email: user.email } },
       { status: 201 }
     );
-
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60,
-      path: "/",
-    });
-
-    return response;
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(

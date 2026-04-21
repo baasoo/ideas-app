@@ -1,23 +1,17 @@
-import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import { getDb } from "@/lib/db";
-import { verifyToken, parseAuthCookie } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import IdeaDetail from "@/components/IdeaDetail";
+import type { Session } from "next-auth";
 
 export default async function IdeaPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-
-  const token = parseAuthCookie(cookieHeader);
-  const payload = token ? verifyToken(token) : null;
+  const session = (await getServerSession(authOptions)) as Session | null;
 
   const db = getDb();
   const ideaResult = await db.query("SELECT * FROM ideas WHERE id = $1", [
@@ -29,7 +23,7 @@ export default async function IdeaPage({
   }
 
   const idea = ideaResult.rows[0];
-  const isOwner = payload?.userId === idea.user_id;
+  const isOwner = session?.user?.id === idea.user_id;
 
   if (!idea.is_public && !isOwner) {
     redirect("/dashboard");

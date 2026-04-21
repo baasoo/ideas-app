@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import { getDb } from "@/lib/db";
-import { verifyToken, parseAuthCookie } from "@/lib/auth";
+import type { Session } from "next-auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const token = parseAuthCookie(request.headers.get("cookie"));
+    const session = (await getServerSession(authOptions)) as Session | null;
 
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
-    if (!payload) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -21,22 +18,37 @@ export async function GET(request: NextRequest) {
     const tag = searchParams.get("tag") || "";
 
     const db = getDb();
+    const userId = session.user.id;
 
     let query = `
-      SELECT DISTINCT i.id, i.user_id, i.title, i.description, i.category, i.is_public, i.created_at, i.updated_at, u.email as submitter_email,
+      SELECT DISTINCT i.id, i.user_id, i.title, i.description, i.category, i.is_public, i.created_at, i.updated_at, u.email as submitter_email, u.name as submitter_name,
         COALESCE(COUNT(DISTINCT il.id), 0) as like_count,
         CASE WHEN EXISTS (SELECT 1 FROM idea_likes WHERE idea_id = i.id AND user_id = $1) THEN true ELSE false END as is_liked
       FROM ideas i
-      LEFT JOIN tags t ON i.id = t.idea_id
       LEFT JOIN idea_likes il ON i.id = il.idea_id
       JOIN users u ON i.user_id = u.id
-      WHERE i.is_public = true OR i.user_id = $1
+      WHERE (i.is_public = true OR i.user_id = $1)
     `;
-    const params: (string | null)[] = [payload.userId];
+    const params: (string | null)[] = [userId];
 
+    // Handle multi-keyword search with AND logic across all fields
     if (search) {
-      query += ` AND (i.title ILIKE $${params.length + 1} OR i.description ILIKE $${params.length + 1})`;
-      params.push(`%${search}%`);
+      const keywords = search.trim().split(/\s+/).filter(k => k.length > 0);
+
+      for (const keyword of keywords) {
+        const keywordParam = `%${keyword}%`;
+        params.push(keywordParam);
+        const paramIndex = params.length;
+
+        query += ` AND (
+          i.title ILIKE $${paramIndex}
+          OR i.description ILIKE $${paramIndex}
+          OR i.category ILIKE $${paramIndex}
+          OR u.email ILIKE $${paramIndex}
+          OR u.name ILIKE $${paramIndex}
+          OR EXISTS (SELECT 1 FROM tags WHERE idea_id = i.id AND tag_name ILIKE $${paramIndex})
+        )`;
+      }
     }
 
     if (category) {
@@ -45,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tag) {
-      query += ` AND t.tag_name ILIKE $${params.length + 1}`;
+      query += ` AND EXISTS (SELECT 1 FROM tags WHERE idea_id = i.id AND tag_name ILIKE $${params.length + 1})`;
       params.push(`%${tag}%`);
     }
 
@@ -90,14 +102,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = parseAuthCookie(request.headers.get("cookie"));
+    const session = (await getServerSession(authOptions)) as Session | null;
 
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
-    if (!payload) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -112,12 +119,13 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb();
+    const userId = session.user.id;
 
     const result = await db.query(
       `INSERT INTO ideas (user_id, title, description, category, is_public)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, user_id, title, description, category, is_public, created_at, updated_at`,
-      [payload.userId, title, description || "", category || "", is_public || false]
+      [userId, title, description || "", category || "", is_public || false]
     );
 
     const idea = result.rows[0];

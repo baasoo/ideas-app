@@ -1,22 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyToken, parseAuthCookie } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
+import type { Session } from "next-auth";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const token = parseAuthCookie(request.headers.get("cookie"));
+    const session = (await getServerSession(authOptions)) as Session | null;
 
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const payload = verifyToken(token);
-
-    if (!payload) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     return NextResponse.json(
-      { user: { id: payload.userId, email: payload.email } },
+      { user: { id: session.user.id, email: session.user.email, name: session.user.name } },
       { status: 200 }
     );
   } catch (error) {

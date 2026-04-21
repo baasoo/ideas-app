@@ -1,4 +1,5 @@
 import AuthForm from "@/components/AuthForm";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -14,7 +15,21 @@ export default function LoginPage() {
           <h2 className="mb-6 text-center text-xl font-semibold text-gray-900">
             Log In
           </h2>
-          <AuthForm isSignup={false} />
+
+          <div className="space-y-4">
+            <GoogleSignInButton />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">or</span>
+              </div>
+            </div>
+
+            <AuthForm isSignup={false} />
+          </div>
         </div>
 
         <p className="text-center text-sm text-gray-600">
