@@ -5,12 +5,13 @@ import Link from "next/link";
 export default async function PublicUserPage({
   params,
 }: {
-  params: { userId: string };
+  params: Promise<{ userId: string }>;
 }) {
   const db = getDb();
+  const { userId } = await params;
 
   const userResult = await db.query("SELECT email FROM users WHERE id = $1", [
-    params.userId,
+    userId,
   ]);
 
   if (userResult.rows.length === 0) {

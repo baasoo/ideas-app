@@ -8,14 +8,15 @@ import type { Session } from "next-auth";
 export default async function PublicIdeaPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const db = getDb();
   const session = (await getServerSession(authOptions)) as Session | null;
+  const { id } = await params;
 
   const ideaResult = await db.query(
     "SELECT * FROM ideas WHERE id = $1",
-    [params.id]
+    [id]
   );
 
   if (ideaResult.rows.length === 0) {
