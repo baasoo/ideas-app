@@ -21,6 +21,7 @@ export default function IdeaCard({ idea, isOwner = false, onIdeaUpdate }: IdeaCa
   const [editDescription, setEditDescription] = useState(idea.description || "");
   const [editCategory, setEditCategory] = useState(idea.category || "");
   const [editTags, setEditTags] = useState(idea.tags.join(", "));
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   const handleCardClick = () => {
     setShowModal(true);
@@ -99,6 +100,19 @@ export default function IdeaCard({ idea, isOwner = false, onIdeaUpdate }: IdeaCa
       console.error("Edit error:", err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    try {
+      const shareUrl = `${window.location.origin}/public/ideas/${idea.id}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("Link copied to clipboard!");
+      setTimeout(() => setShareMessage(null), 3000);
+    } catch (err) {
+      console.error("Copy error:", err);
+      setShareMessage("Failed to copy link");
+      setTimeout(() => setShareMessage(null), 3000);
     }
   };
 
@@ -251,6 +265,11 @@ export default function IdeaCard({ idea, isOwner = false, onIdeaUpdate }: IdeaCa
                   ))}
                 </div>
               )}
+              {shareMessage && (
+                <div className="mb-3 rounded bg-green-50 px-3 py-2 text-sm text-green-700">
+                  {shareMessage}
+                </div>
+              )}
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {!isEditing && displayIdea.submitter_email && (
@@ -279,6 +298,14 @@ export default function IdeaCard({ idea, isOwner = false, onIdeaUpdate }: IdeaCa
                         {isLiked ? "👍 Liked" : "👍 Like"}
                       </button>
                     </>
+                  )}
+                  {!isEditing && (
+                    <button
+                      onClick={handleCopyShareLink}
+                      className="rounded bg-blue-500 px-4 py-2 text-white font-medium hover:bg-blue-600"
+                    >
+                      🔗 Copy Link
+                    </button>
                   )}
                   {isEditing ? (
                     <>
