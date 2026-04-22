@@ -34,7 +34,7 @@ export default async function PublicUserPage({
      FROM ideas
      WHERE user_id = $1
      ORDER BY created_at DESC`,
-    [params.userId]
+    [userId]
   );
   const ideasResult = ideasQueryResult.rows;
 
