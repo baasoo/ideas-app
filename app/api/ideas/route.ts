@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       JOIN users u ON i.user_id = u.id
       WHERE (i.is_public = true OR i.user_id = $1)
     `;
-    const params: (string | null)[] = [userId];
+    const params: (string | string[] | null)[] = [userId];
 
     // Handle multi-keyword search with AND logic across all fields
     if (search) {

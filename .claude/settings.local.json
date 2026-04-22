@@ -11,7 +11,10 @@
       "Bash(netstat -ano)",
       "Bash(taskkill /PID 16052 /F)",
       "PowerShell(Stop-Process -Id 16052 -Force -ErrorAction SilentlyContinue)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(taskkill /PID 1332 /F)"
     ]
   }
 }
