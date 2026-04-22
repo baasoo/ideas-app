@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search") || "";
-    const category = searchParams.get("category") || "";
+    const category = searchParams.get("category") || ""; // Legacy: single category
+    const categoriesParam = searchParams.get("categories") || ""; // New: multi-select
     const tag = searchParams.get("tag") || "";
 
     const db = getDb();
@@ -51,9 +52,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (category) {
-      query += ` AND i.category = $${params.length + 1}`;
-      params.push(category);
+    // Handle multiple categories (new) or single category (legacy)
+    const selectedCategories = categoriesParam
+      ? categoriesParam.split(",").filter(c => c.trim().length > 0)
+      : category ? [category] : [];
+
+    if (selectedCategories.length > 0) {
+      params.push(selectedCategories);
+      const paramIndex = params.length;
+      query += ` AND i.category = ANY($${paramIndex}::text[])`;
     }
 
     if (tag) {

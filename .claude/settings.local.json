@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs kill *)",
+      "Bash(kill -9 1582)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 16052 /F)",
+      "PowerShell(Stop-Process -Id 16052 -Force -ErrorAction SilentlyContinue)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}
