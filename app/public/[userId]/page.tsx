@@ -29,9 +29,9 @@ export default async function PublicUserPage({
   const user = userResult.rows[0];
 
   const ideasQueryResult = await db.query(
-    `SELECT id, title, description, category, is_public, created_at, updated_at
+    `SELECT id, title, description, category, created_at, updated_at
      FROM ideas
-     WHERE user_id = $1 AND is_public = true
+     WHERE user_id = $1
      ORDER BY created_at DESC`,
     [params.userId]
   );

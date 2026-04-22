@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
 
     let query = `
-      SELECT DISTINCT i.id, i.user_id, i.title, i.description, i.category, i.is_public, i.created_at, i.updated_at, u.email as submitter_email, u.name as submitter_name,
+      SELECT DISTINCT i.id, i.user_id, i.title, i.description, i.category, i.created_at, i.updated_at, u.email as submitter_email, u.name as submitter_name,
         COALESCE(COUNT(DISTINCT il.id), 0) as like_count,
         CASE WHEN EXISTS (SELECT 1 FROM idea_likes WHERE idea_id = i.id AND user_id = $1) THEN true ELSE false END as is_liked
       FROM ideas i
       LEFT JOIN idea_likes il ON i.id = il.idea_id
       JOIN users u ON i.user_id = u.id
-      WHERE (i.is_public = true OR i.user_id = $1)
+      WHERE 1=1
     `;
     const params: (string | string[] | null)[] = [userId];
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, category, is_public, tags } =
+    const { title, description, category, tags } =
       await request.json();
 
     if (!title || title.trim() === "") {
@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
     const userId = session.user.id;
 
     const result = await db.query(
-      `INSERT INTO ideas (user_id, title, description, category, is_public)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, user_id, title, description, category, is_public, created_at, updated_at`,
-      [userId, title, description || "", category || "", is_public || false]
+      `INSERT INTO ideas (user_id, title, description, category)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, user_id, title, description, category, created_at, updated_at`,
+      [userId, title, description || "", category || ""]
     );
 
     const idea = result.rows[0];

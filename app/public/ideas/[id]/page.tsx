@@ -14,7 +14,7 @@ export default async function PublicIdeaPage({
   const session = (await getServerSession(authOptions)) as Session | null;
 
   const ideaResult = await db.query(
-    "SELECT * FROM ideas WHERE id = $1 AND is_public = true",
+    "SELECT * FROM ideas WHERE id = $1",
     [params.id]
   );
 

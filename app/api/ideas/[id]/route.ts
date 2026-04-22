@@ -19,18 +19,6 @@ export async function GET(
 
     const idea = result.rows[0];
 
-    // Check if private and user is not owner
-    if (!idea.is_public) {
-      const session = (await getServerSession(authOptions)) as Session | null;
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-
-      if (session.user.id !== idea.user_id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-    }
-
     const tagsResult = await db.query(
       `SELECT tag_name FROM tags WHERE idea_id = $1`,
       [id]
@@ -84,18 +72,17 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { title, description, category, is_public, tags } =
+    const { title, description, category, tags } =
       await request.json();
 
     const updateResult = await db.query(
-      `UPDATE ideas SET title = $1, description = $2, category = $3, is_public = $4, updated_at = NOW()
-       WHERE id = $5
-       RETURNING id, user_id, title, description, category, is_public, created_at, updated_at`,
+      `UPDATE ideas SET title = $1, description = $2, category = $3, updated_at = NOW()
+       WHERE id = $4
+       RETURNING id, user_id, title, description, category, created_at, updated_at`,
       [
         title,
         description || "",
         category || "",
-        is_public || false,
         id,
       ]
     );

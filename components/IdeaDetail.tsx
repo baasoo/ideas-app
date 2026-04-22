@@ -40,7 +40,6 @@ export default function IdeaDetail({ idea, isOwner }: IdeaDetailProps) {
           title: formData.title,
           description: formData.description,
           category: formData.category || null,
-          is_public: true,
           tags,
         }),
         credentials: "include",

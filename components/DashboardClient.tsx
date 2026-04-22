@@ -20,7 +20,6 @@ export default function DashboardClient() {
     description: "",
     category: "",
     tags: "",
-    is_public: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [currentView, setCurrentView] = useState<"cards" | "list">("cards");
@@ -127,7 +126,6 @@ export default function DashboardClient() {
           title: formData.title,
           description: formData.description,
           category: formData.category || null,
-          is_public: true,
           tags,
         }),
         credentials: "include",
@@ -143,7 +141,6 @@ export default function DashboardClient() {
         description: "",
         category: "",
         tags: "",
-        is_public: false,
       });
       setShowForm(false);
       await fetchIdeas();
